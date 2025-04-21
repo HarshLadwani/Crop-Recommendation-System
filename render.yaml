@@ -2,7 +2,9 @@ services:
   - type: web
     name: crop-recommendation-app
     env: python
-    buildCommand: ""
+    buildCommand: |
+      apt-get update
+      apt-get install -y wkhtmltopdf
     startCommand: python app.py
     envVars:
       - key: FLASK_ENV
