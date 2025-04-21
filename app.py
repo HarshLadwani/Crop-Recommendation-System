@@ -14,8 +14,15 @@ app.secret_key = 'your_secret_key'
 model = joblib.load('crop_recommendation_model.pkl')
 
 # PDFKit configuration
-config = pdfkit.configuration(wkhtmltopdf=r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe')
+import os
 
+# Platform-aware wkhtmltopdf config
+if os.name == 'nt':  # Windows
+    path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
+else:  # Linux (like on Render)
+    path_wkhtmltopdf = '/usr/bin/wkhtmltopdf'
+
+config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
 # Initialize database
 def init_db():
     conn = sqlite3.connect('users.db')
