@@ -4,3 +4,4 @@ joblib
 numpy
 bcrypt
 pdfkit
+scikit-learn
