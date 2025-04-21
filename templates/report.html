@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Crop Recommendation Report</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        * { box-sizing: border-box; }
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            padding: 30px;
+            background: linear-gradient(to right, #d9f99d, #a7f3d0);
+            color: #333;
+        }
+
+        .report-container {
+            background-color: #ffffff;
+            max-width: 900px;
+            margin: 0 auto;
+            padding: 40px;
+            border-radius: 20px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2e7d32;
+            margin-bottom: 40px;
+            font-size: 32px;
+        }
+
+        .section {
+            padding: 25px;
+            border-left: 6px solid #34d399;
+            border-radius: 12px;
+            background: #f0fdf4;
+            margin-bottom: 30px;
+        }
+
+        .section h2 {
+            color: #047857;
+            font-size: 20px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #d1fae5;
+            padding-bottom: 5px;
+        }
+
+        ul { list-style: none; padding: 0; margin: 0; }
+
+        li { margin-bottom: 10px; font-size: 15px; }
+
+        p { font-size: 15px; margin: 8px 0; }
+
+        strong { color: #065f46; }
+
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: #10b981;
+            color: white;
+            text-decoration: none;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            margin: 15px 8px 0;
+        }
+
+        .btn:hover { background-color: #059669; }
+
+        .note {
+            font-size: 13px;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .btn-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        @media (max-width: 600px) {
+            body { padding: 15px; }
+            .report-container { padding: 20px; }
+            h1 { font-size: 24px; }
+        }
+    </style>
+</head>
+<body>
+    <div class="report-container">
+        <h1>🌾 Crop Recommendation Report</h1>
+
+        <div class="section">
+            <h2>👤 User & Report Info</h2>
+            <p><strong>User:</strong> {{ user }}</p>
+            <p><strong>Generated On:</strong> {{ timestamp }}</p>
+        </div>
+
+        <div class="section">
+            <h2>🧪 Input Values</h2>
+            <ul>
+                {% for key, value in input_values.items() %}
+                    <li><strong>{{ key | capitalize }}:</strong> {{ value }}</li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>🌱 Recommended Crop</h2>
+            <p><strong>{{ prediction }}</strong></p>
+            <p class="note">This crop is best suited based on the current soil and climate conditions.</p>
+        </div>
+
+        <div class="section">
+            <h2>🌿 Top 3 Alternate Crops</h2>
+            <ul>
+                {% for crop, prob in top_crops %}
+                    <li>{{ crop }} - <strong>{{ prob }}%</strong></li>
+                {% endfor %}
+            </ul>
+        </div>
+
+        <div class="section">
+            <h2>📈 Additional Insights</h2>
+            <p><strong>Ideal Temperature Range:</strong> 20°C - 35°C (based on recommended crops)</p>
+            <p><strong>Soil Condition Tip:</strong> Maintain balanced pH and monitor moisture regularly.</p>
+            <p><strong>Weather Advisory:</strong> Refer to local forecasts to optimize planting schedules.</p>
+        </div>
+
+        <div class="btn-container">
+            <form action="{{ url_for('download_report') }}" method="POST" style="display: inline;">
+                {% for key, value in input_values.items() %}
+                    <input type="hidden" name="{{ key }}" value="{{ value }}">
+                {% endfor %}
+                <button type="submit" class="btn">📄 Download PDF</button>
+            </form>
+            <a class="btn" href="/">🏠 Go to Home</a>
+        </div>
+    </div>
+</body>
+</html>

@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Crop Recommendation System</title>
+  <style>
+    /* Root Variables for Color Theme */
+    :root {
+      --primary-green: #2d6a4f;
+      --accent-green: #40916c;
+      --light-green: #d8f3dc;
+      --background-green: #e9f5e9;
+      --text-dark: #1b4332;
+      --text-light: #fefefe;
+      --shadow: rgba(0, 0, 0, 0.1);
+    }
+
+    /* Base Styles */
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background-color: var(--background-green);
+      color: var(--text-dark);
+      line-height: 1.6;
+    }
+
+    nav {
+      background-color: var(--primary-green);
+      padding: 20px 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 4px 10px var(--shadow);
+    }
+
+    nav .brand {
+      font-size: 1.8em;
+      color: var(--text-light);
+      font-weight: 600;
+      letter-spacing: 1px;
+    }
+
+    nav a {
+      color: var(--text-light);
+      text-decoration: none;
+      margin: 0 15px;
+      font-weight: 500;
+      transition: color 0.3s ease;
+    }
+
+    nav a:hover {
+      color: #b7e4c7;
+    }
+
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 60px 40px;
+      flex-wrap: wrap;
+    }
+
+    header .content {
+      max-width: 50%;
+      animation: fadeInLeft 1s ease;
+    }
+
+    header h1 {
+      font-size: 2.5em;
+      margin-bottom: 20px;
+      color: var(--primary-green);
+    }
+
+    header p {
+      font-size: 1.1em;
+      color: #333;
+    }
+
+    header img {
+      max-width: 40%;
+      border-radius: 25px;
+      box-shadow: 0 6px 20px var(--shadow);
+      animation: fadeInRight 1s ease;
+    }
+
+    .button {
+      margin-top: 20px;
+      padding: 15px 30px;
+      font-size: 1em;
+      border: none;
+      border-radius: 8px;
+      background-color: var(--accent-green);
+      color: white;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    .button:hover {
+      background-color: var(--primary-green);
+    }
+
+    section {
+      padding: 60px 40px;
+    }
+
+    .section-title {
+      font-size: 2em;
+      color: var(--primary-green);
+      margin-bottom: 30px;
+      text-align: center;
+    }
+
+    .split-section {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 40px;
+    }
+
+    .split-box {
+      flex: 1;
+      background-color: #fff;
+      padding: 25px;
+      border-radius: 15px;
+      box-shadow: 0 6px 15px var(--shadow);
+      min-width: 280px;
+      transition: transform 0.3s ease;
+    }
+
+    .split-box:hover {
+      transform: translateY(-10px);
+    }
+
+    .split-box h3 {
+      color: var(--accent-green);
+      margin-bottom: 10px;
+    }
+
+    .split-box ul {
+      padding-left: 20px;
+    }
+
+    .features {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
+    }
+
+    .feature-card {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px var(--shadow);
+      text-align: center;
+      flex: 1;
+      min-width: 280px;
+      max-width: 300px;
+      animation: fadeInUp 1s ease;
+    }
+
+    .feature-card h4 {
+      color: var(--primary-green);
+      margin-bottom: 10px;
+    }
+
+    footer {
+      background-color: var(--primary-green);
+      color: var(--text-light);
+      padding: 20px 40px;
+      text-align: center;
+      font-size: 0.9em;
+    }
+
+    /* Animations */
+    @keyframes fadeInLeft {
+      from { opacity: 0; transform: translateX(-30px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes fadeInRight {
+      from { opacity: 0; transform: translateX(30px); }
+      to { opacity: 1; transform: translateX(0); }
+    }
+
+    @keyframes fadeInUp {
+      from { opacity: 0; transform: translateY(30px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    @media (max-width: 768px) {
+      header {
+        flex-direction: column;
+        text-align: center;
+      }
+      header .content, header img {
+        max-width: 90%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <div class="brand">Crop Recommendation</div>
+    <div>
+      <a href="#about">About</a>
+      <a href="#services">Services</a>
+      <a href="#contact">Contact</a>
+    </div>
+  </nav>
+
+  <header>
+    <div class="content">
+      <h1>Empowering Farmers with Smart Decisions</h1>
+      <p>Our system helps farmers choose the most suitable crops based on real-time soil data, weather patterns, and market demand. Cultivate smarter, grow better, and thrive sustainably.</p>
+      <button class="button" onclick="window.location.href='/recommend'">Get Recommendations</button>
+    </div>
+    <img src="/static/img.jpg" alt="Farmer Image" />
+  </header>
+
+  <section id="problems">
+    <h2 class="section-title">Challenges Farmers Face</h2>
+    <div class="split-section">
+      <div class="split-box">
+        <h3>Common Issues</h3>
+        <ul>
+          <li>Uncertainty about crop suitability</li>
+          <li>Weather unpredictability</li>
+          <li>Poor yields from incorrect choices</li>
+          <li>Lack of soil nutrient awareness</li>
+          <li>Limited access to market trends</li>
+        </ul>
+      </div>
+      <div class="split-box">
+        <h3>Our Solutions</h3>
+        <ul>
+          <li>Smart crop recommendations</li>
+          <li>Weather-informed guidance</li>
+          <li>Increased productivity</li>
+          <li>Nutrient analysis & advice</li>
+          <li>Market-aligned crop planning</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <section id="services">
+    <h2 class="section-title">What We Offer</h2>
+    <div class="features">
+      <div class="feature-card">
+        <h4>Soil Analysis</h4>
+        <p>Understand your soil's NPK levels and pH to enhance crop suitability.</p>
+      </div>
+      <div class="feature-card">
+        <h4>Crop Recommendations</h4>
+        <p>Receive personalized suggestions based on your land and environment.</p>
+      </div>
+      <div class="feature-card">
+        <h4>Market Insights</h4>
+        <p>Stay ahead with data on high-demand and profitable crops.</p>
+      </div>
+    </div>
+  </section>
+
+  <section id="about">
+    <h2 class="section-title">About Us</h2>
+    <p style="max-width: 800px; margin: auto; text-align: center;">
+      We are a team of agronomists, data scientists, and engineers dedicated to revolutionizing agriculture through AI-driven crop planning. Our mission is to empower farmers with intelligent tools to make confident and sustainable farming decisions.
+    </p>
+  </section>
+
+  <footer id="contact">
+    <p>&copy; 2025 Crop Recommendation System. All rights reserved.</p>
+  </footer>
+
+</body>
+</html>
