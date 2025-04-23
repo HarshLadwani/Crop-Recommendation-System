@@ -6,6 +6,7 @@ import bcrypt
 from datetime import datetime
 import pdfkit
 from io import BytesIO
+import os
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -14,15 +15,13 @@ app.secret_key = 'your_secret_key'
 model = joblib.load('crop_recommendation_model.pkl')
 
 # PDFKit configuration
-import os
-
-# Platform-aware wkhtmltopdf config
 if os.name == 'nt':  # Windows
     path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
 else:  # Linux (like on Render)
     path_wkhtmltopdf = '/usr/bin/wkhtmltopdf'
 
 config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
+
 # Initialize database
 def init_db():
     conn = sqlite3.connect('users.db')
@@ -164,6 +163,7 @@ def download_report():
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
+        # Render the report as HTML
         rendered_html = render_template('report.html',
                                         user=session['user'],
                                         input_values=form_values,
@@ -171,6 +171,7 @@ def download_report():
                                         top_crops=top_crops,
                                         timestamp=timestamp)
 
+        # Convert HTML to PDF using pdfkit
         pdf = pdfkit.from_string(rendered_html, False, configuration=config)
 
         return send_file(BytesIO(pdf),

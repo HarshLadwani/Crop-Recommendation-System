@@ -5,7 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Crop Recommendation System</title>
   <style>
-    /* Root Variables for Color Theme */
     :root {
       --primary-green: #2d6a4f;
       --accent-green: #40916c;
@@ -16,7 +15,6 @@
       --shadow: rgba(0, 0, 0, 0.1);
     }
 
-    /* Base Styles */
     * {
       margin: 0;
       padding: 0;
@@ -44,6 +42,11 @@
       color: var(--text-light);
       font-weight: 600;
       letter-spacing: 1px;
+    }
+
+    nav .nav-links {
+      display: flex;
+      align-items: center;
     }
 
     nav a {
@@ -177,7 +180,6 @@
       font-size: 0.9em;
     }
 
-    /* Animations */
     @keyframes fadeInLeft {
       from { opacity: 0; transform: translateX(-30px); }
       to { opacity: 1; transform: translateX(0); }
@@ -201,6 +203,9 @@
       header .content, header img {
         max-width: 90%;
       }
+      nav .nav-links {
+        flex-direction: column;
+      }
     }
   </style>
 </head>
@@ -208,7 +213,14 @@
 
   <nav>
     <div class="brand">Crop Recommendation</div>
-    <div>
+    <div class="nav-links">
+      {% if session.user %}
+        <a href="/recommend">Get Recommendations</a>
+        <a href="/logout">Logout</a>
+      {% else %}
+        <a href="/login">Login</a>
+        <a href="/register">Signup</a>
+      {% endif %}
       <a href="#about">About</a>
       <a href="#services">Services</a>
       <a href="#contact">Contact</a>
@@ -219,7 +231,11 @@
     <div class="content">
       <h1>Empowering Farmers with Smart Decisions</h1>
       <p>Our system helps farmers choose the most suitable crops based on real-time soil data, weather patterns, and market demand. Cultivate smarter, grow better, and thrive sustainably.</p>
-      <button class="button" onclick="window.location.href='/recommend'">Get Recommendations</button>
+      {% if session.user %}
+        <button class="button" onclick="window.location.href='/recommend'">Get Recommendations</button>
+      {% else %}
+        <button class="button" onclick="window.location.href='/login'">Login to Start</button>
+      {% endif %}
     </div>
     <img src="/static/img.jpg" alt="Farmer Image" />
   </header>
@@ -271,7 +287,7 @@
   <section id="about">
     <h2 class="section-title">About Us</h2>
     <p style="max-width: 800px; margin: auto; text-align: center;">
-      We are a team of agronomists, data scientists, and engineers dedicated to revolutionizing agriculture through AI-driven crop planning. Our mission is to empower farmers with intelligent tools to make confident and sustainable farming decisions.
+      We are a passionate group of engineering students with a deep interest in agriculture and technology. Our goal is to bridge the gap between traditional farming and modern data-driven solutions. With a blend of innovation and enthusiasm, we aim to empower farmers through intelligent crop planning tools and make sustainable farming more accessible for everyone.
     </p>
   </section>
 
