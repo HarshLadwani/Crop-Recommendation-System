@@ -15,9 +15,9 @@ app.secret_key = 'your_secret_key'
 model = joblib.load('crop_recommendation_model.pkl')
 
 # PDFKit configuration
-if os.name == 'nt':  # Windows
+if os.name == 'nt':
     path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
-else:  # Linux (like on Render)
+else:
     path_wkhtmltopdf = '/usr/bin/wkhtmltopdf'
 
 config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
@@ -26,7 +26,7 @@ config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
 def init_db():
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
-    c.execute(''' 
+    c.execute('''
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE,
@@ -106,6 +106,7 @@ def predict():
             'rainfall': request.form['rainfall']
         }
 
+        print("Received input values:", form_values)
         session['form_values'] = form_values
         return redirect(url_for('generate_report'))
 
@@ -118,14 +119,20 @@ def generate_report():
         return redirect(url_for('login'))
 
     try:
-        form_values = {k: float(v) for k, v in session['form_values'].items()}
+        raw_values = session.pop('form_values')
+        form_values = {k: float(v) for k, v in raw_values.items()}
+        input_order = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
+        features = [form_values[key] for key in input_order]
 
-        prediction = model.predict([list(form_values.values())])[0]
-        probabilities = model.predict_proba([list(form_values.values())])[0]
+        prediction = model.predict([features])[0]
+        probabilities = model.predict_proba([features])[0]
         classes = model.classes_
 
         top_indices = np.argsort(probabilities)[::-1][:3]
         top_crops = [(classes[i], round(probabilities[i] * 100, 2)) for i in top_indices]
+
+        print("Predicted crop:", prediction)
+        print("Top 3 crops:", top_crops)
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
@@ -154,8 +161,11 @@ def download_report():
             'rainfall': float(request.form['rainfall'])
         }
 
-        prediction = model.predict([list(form_values.values())])[0]
-        probabilities = model.predict_proba([list(form_values.values())])[0]
+        input_order = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
+        features = [form_values[key] for key in input_order]
+
+        prediction = model.predict([features])[0]
+        probabilities = model.predict_proba([features])[0]
         classes = model.classes_
 
         top_indices = np.argsort(probabilities)[::-1][:3]
@@ -163,7 +173,6 @@ def download_report():
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        # Render the report as HTML
         rendered_html = render_template('report.html',
                                         user=session['user'],
                                         input_values=form_values,
@@ -171,7 +180,6 @@ def download_report():
                                         top_crops=top_crops,
                                         timestamp=timestamp)
 
-        # Convert HTML to PDF using pdfkit
         pdf = pdfkit.from_string(rendered_html, False, configuration=config)
 
         return send_file(BytesIO(pdf),
