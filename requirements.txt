@@ -6,3 +6,4 @@ bcrypt
 pdfkit
 scikit-learn
 requests
+geopy
