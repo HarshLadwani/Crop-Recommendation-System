@@ -7,3 +7,4 @@ pdfkit
 scikit-learn
 requests
 geopy
+matplotlib
