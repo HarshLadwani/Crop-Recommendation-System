@@ -9,6 +9,8 @@ import pdfkit
 import os
 import requests
 from geopy.geocoders import Nominatim
+import matplotlib.pyplot as plt
+import base64
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
@@ -22,7 +24,7 @@ else:
     path_wkhtmltopdf = '/usr/bin/wkhtmltopdf'
 config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
 
-# Initialize DB with history table
+# Initialize DB
 def init_db():
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
@@ -49,7 +51,7 @@ def init_db():
 
 init_db()
 
-# Get weather data
+# Weather API
 def get_weather(lat, lon):
     try:
         api_key = 'a901a1f72153e2ae8bbb3f978b3d3176'
@@ -58,16 +60,47 @@ def get_weather(lat, lon):
         data = response.json()
         return data['main']['temp'], data['main']['humidity']
     except:
-        return 25, 50  # Default if API fails
+        return 25, 50
 
-# Get location name using geopy
+# Geolocation
 def get_location_name(lat, lon):
     try:
         geolocator = Nominatim(user_agent="crop_app")
         location = geolocator.reverse((lat, lon), language='en')
-        return location.address if location else "Unknown"
+        if location:
+            address = location.raw.get('address', {})
+            city = address.get('city', address.get('town', address.get('village', '')))
+            state = address.get('state', '')
+            country = address.get('country', '')
+            return f"{city}, {state}, {country}".strip(', ')
+        return "Unknown"
     except:
         return "Unknown"
+
+# Generate soil chart
+def generate_soil_chart(N, P, K):
+    labels = ['Nitrogen (N)', 'Phosphorus (P)', 'Potassium (K)']
+    values = [N, P, K]
+    colors = ['#4CAF50', '#2196F3', '#FF9800']
+
+    plt.figure(figsize=(8, 5))
+    bars = plt.bar(labels, values, color=colors)
+
+    plt.ylabel('Normalized %')
+    plt.title('Soil Nutrient Levels')
+
+    # Correct Legend
+    plt.legend(['Nitrogen (N)', 'Phosphorus (P)', 'Potassium (K)'], loc='upper center', bbox_to_anchor=(0.5, 1.15), ncol=3)
+
+    plt.tight_layout()
+
+    buffer = BytesIO()
+    plt.savefig(buffer, format='png')
+    buffer.seek(0)
+    image_base64 = base64.b64encode(buffer.getvalue()).decode()
+    plt.close()
+
+    return image_base64
 
 @app.route('/')
 def home():
@@ -151,8 +184,11 @@ def predict():
         conn.commit()
         conn.close()
 
+        soil_chart = generate_soil_chart(form_data['N'], form_data['P'], form_data['K'])
+
         return render_template("report.html", user=session['user'], input_values=form_data,
-                               prediction=pred_crop, top_crops=top_crops, location=loc, timestamp=timestamp)
+                               prediction=pred_crop, top_crops=top_crops, location=loc,
+                               timestamp=timestamp, soil_chart=soil_chart)
 
     except Exception as e:
         return f"Error: {str(e)}"
@@ -204,9 +240,12 @@ def download_report():
         top_indices = np.argsort(probabilities)[::-1][:3]
         top_crops = [{'crop': classes[i], 'prob': round(probabilities[i] * 100, 2)} for i in top_indices]
 
+        soil_chart = generate_soil_chart(form_values['N'], form_values['P'], form_values['K'])
+
         rendered_html = render_template("report.html", user=session['user'],
                                         input_values=form_values, prediction=prediction,
-                                        top_crops=top_crops, location=location, timestamp=timestamp)
+                                        top_crops=top_crops, location=location,
+                                        timestamp=timestamp, soil_chart=soil_chart)
 
         options = {'enable-local-file-access': ''}
         pdf = pdfkit.from_string(rendered_html, False, configuration=config, options=options)
