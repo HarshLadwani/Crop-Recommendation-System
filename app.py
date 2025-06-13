@@ -4,25 +4,25 @@ import numpy as np
 import sqlite3
 import bcrypt
 from datetime import datetime
-import pdfkit
 from io import BytesIO
+import pdfkit
 import os
+import requests
+from geopy.geocoders import Nominatim
 
 app = Flask(__name__)
 app.secret_key = 'your_secret_key'
 
-# Load trained model
 model = joblib.load('crop_recommendation_model.pkl')
 
-# PDFKit configuration
+# PDFKit setup
 if os.name == 'nt':
     path_wkhtmltopdf = r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe'
 else:
     path_wkhtmltopdf = '/usr/bin/wkhtmltopdf'
-
 config = pdfkit.configuration(wkhtmltopdf=path_wkhtmltopdf)
 
-# Initialize database
+# Initialize DB with history table
 def init_db():
     conn = sqlite3.connect('users.db')
     c = conn.cursor()
@@ -33,10 +33,41 @@ def init_db():
             password TEXT
         )
     ''')
+    c.execute('''
+        CREATE TABLE IF NOT EXISTS history (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            username TEXT,
+            timestamp TEXT,
+            predicted_crop TEXT,
+            location TEXT,
+            N REAL, P REAL, K REAL,
+            temperature REAL, humidity REAL, ph REAL, rainfall REAL
+        )
+    ''')
     conn.commit()
     conn.close()
 
 init_db()
+
+# Get weather data
+def get_weather(lat, lon):
+    try:
+        api_key = 'a901a1f72153e2ae8bbb3f978b3d3176'
+        url = f"http://api.openweathermap.org/data/2.5/weather?lat={lat}&lon={lon}&appid={api_key}&units=metric"
+        response = requests.get(url)
+        data = response.json()
+        return data['main']['temp'], data['main']['humidity']
+    except:
+        return 25, 50  # Default if API fails
+
+# Get location name using geopy
+def get_location_name(lat, lon):
+    try:
+        geolocator = Nominatim(user_agent="crop_app")
+        location = geolocator.reverse((lat, lon), language='en')
+        return location.address if location else "Unknown"
+    except:
+        return "Unknown"
 
 @app.route('/')
 def home():
@@ -45,38 +76,29 @@ def home():
 @app.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password'].encode('utf-8')
-        hashed = bcrypt.hashpw(password, bcrypt.gensalt())
-
+        uname = request.form['username']
+        pwd = bcrypt.hashpw(request.form['password'].encode('utf-8'), bcrypt.gensalt())
         try:
             conn = sqlite3.connect('users.db')
-            c = conn.cursor()
-            c.execute('INSERT INTO users (username, password) VALUES (?, ?)', (username, hashed))
+            conn.execute("INSERT INTO users (username, password) VALUES (?, ?)", (uname, pwd))
             conn.commit()
-            conn.close()
             return redirect(url_for('login'))
-        except sqlite3.IntegrityError:
-            return 'Username already exists!'
+        except:
+            return "Username already exists!"
     return render_template('register.html')
 
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
-        username = request.form['username']
-        password = request.form['password'].encode('utf-8')
-
+        uname = request.form['username']
+        pwd = request.form['password'].encode('utf-8')
         conn = sqlite3.connect('users.db')
-        c = conn.cursor()
-        c.execute('SELECT * FROM users WHERE username = ?', (username,))
-        user = c.fetchone()
+        user = conn.execute("SELECT * FROM users WHERE username=?", (uname,)).fetchone()
         conn.close()
-
-        if user and bcrypt.checkpw(password, user[2]):
-            session['user'] = username
+        if user and bcrypt.checkpw(pwd, user[2]):
+            session['user'] = uname
             return redirect(url_for('recommend'))
-        else:
-            return 'Invalid username or password!'
+        return "Invalid credentials"
     return render_template('login.html')
 
 @app.route('/logout')
@@ -84,7 +106,7 @@ def logout():
     session.pop('user', None)
     return redirect(url_for('home'))
 
-@app.route('/recommend', methods=['GET'])
+@app.route('/recommend')
 def recommend():
     if 'user' not in session:
         return redirect(url_for('login'))
@@ -96,54 +118,65 @@ def predict():
         return redirect(url_for('login'))
 
     try:
-        form_values = {
-            'N': request.form['N'],
-            'P': request.form['P'],
-            'K': request.form['K'],
-            'temperature': request.form['temperature'],
-            'humidity': request.form['humidity'],
-            'ph': request.form['ph'],
-            'rainfall': request.form['rainfall']
+        lat = float(request.form['latitude'])
+        lon = float(request.form['longitude'])
+        temp, hum = get_weather(lat, lon)
+        loc = get_location_name(lat, lon)
+
+        form_data = {
+            'N': float(request.form['N']),
+            'P': float(request.form['P']),
+            'K': float(request.form['K']),
+            'ph': float(request.form['ph']),
+            'rainfall': float(request.form['rainfall']),
+            'temperature': temp,
+            'humidity': hum
         }
 
-        print("Received input values:", form_values)
-        session['form_values'] = form_values
-        return redirect(url_for('generate_report'))
-
-    except Exception as e:
-        return render_template('recommend.html', prediction_text=f"Error: {str(e)}")
-
-@app.route('/generate_report')
-def generate_report():
-    if 'user' not in session or 'form_values' not in session:
-        return redirect(url_for('login'))
-
-    try:
-        raw_values = session.pop('form_values')
-        form_values = {k: float(v) for k, v in raw_values.items()}
-        input_order = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
-        features = [form_values[key] for key in input_order]
-
-        prediction = model.predict([features])[0]
+        features = [form_data[key] for key in ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']]
+        pred_crop = model.predict([features])[0]
         probabilities = model.predict_proba([features])[0]
         classes = model.classes_
 
         top_indices = np.argsort(probabilities)[::-1][:3]
-        top_crops = [(classes[i], round(probabilities[i] * 100, 2)) for i in top_indices]
-
-        print("Predicted crop:", prediction)
-        print("Top 3 crops:", top_crops)
+        top_crops = [{'crop': classes[i], 'prob': round(probabilities[i] * 100, 2)} for i in top_indices]
 
         timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-        return render_template('report.html',
-                               user=session['user'],
-                               input_values=form_values,
-                               prediction=prediction,
-                               top_crops=top_crops,
-                               timestamp=timestamp)
+        conn = sqlite3.connect('users.db')
+        conn.execute('''INSERT INTO history (username, timestamp, predicted_crop, location, N, P, K, temperature, humidity, ph, rainfall)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)''',
+                     (session['user'], timestamp, pred_crop, loc,
+                      form_data['N'], form_data['P'], form_data['K'], temp, hum, form_data['ph'], form_data['rainfall']))
+        conn.commit()
+        conn.close()
+
+        return render_template("report.html", user=session['user'], input_values=form_data,
+                               prediction=pred_crop, top_crops=top_crops, location=loc, timestamp=timestamp)
+
     except Exception as e:
-        return f"Error in generating report: {str(e)}"
+        return f"Error: {str(e)}"
+
+@app.route('/history')
+def history():
+    if 'user' not in session:
+        return redirect(url_for('login'))
+
+    user = session['user']
+    query = request.args.get('query', '').lower()
+
+    conn = sqlite3.connect('users.db')
+    c = conn.cursor()
+    c.execute("SELECT * FROM history WHERE username = ? ORDER BY timestamp DESC", (user,))
+    all_records = c.fetchall()
+    conn.close()
+
+    if query:
+        records = [row for row in all_records if query in row[3].lower()]
+    else:
+        records = all_records
+
+    return render_template('history.html', records=records)
 
 @app.route('/download_report', methods=['POST'])
 def download_report():
@@ -151,41 +184,34 @@ def download_report():
         return redirect(url_for('login'))
 
     try:
+        form = request.form
         form_values = {
-            'N': float(request.form['N']),
-            'P': float(request.form['P']),
-            'K': float(request.form['K']),
-            'temperature': float(request.form['temperature']),
-            'humidity': float(request.form['humidity']),
-            'ph': float(request.form['ph']),
-            'rainfall': float(request.form['rainfall'])
+            'N': float(form['N']),
+            'P': float(form['P']),
+            'K': float(form['K']),
+            'temperature': float(form['temperature']),
+            'humidity': float(form['humidity']),
+            'ph': float(form['ph']),
+            'rainfall': float(form['rainfall'])
         }
 
-        input_order = ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']
-        features = [form_values[key] for key in input_order]
+        location = form['location']
+        prediction = form['predicted_crop']
+        timestamp = form['timestamp']
 
-        prediction = model.predict([features])[0]
-        probabilities = model.predict_proba([features])[0]
+        probabilities = model.predict_proba([[form_values[key] for key in ['N', 'P', 'K', 'temperature', 'humidity', 'ph', 'rainfall']]])[0]
         classes = model.classes_
-
         top_indices = np.argsort(probabilities)[::-1][:3]
-        top_crops = [(classes[i], round(probabilities[i] * 100, 2)) for i in top_indices]
+        top_crops = [{'crop': classes[i], 'prob': round(probabilities[i] * 100, 2)} for i in top_indices]
 
-        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        rendered_html = render_template("report.html", user=session['user'],
+                                        input_values=form_values, prediction=prediction,
+                                        top_crops=top_crops, location=location, timestamp=timestamp)
 
-        rendered_html = render_template('report.html',
-                                        user=session['user'],
-                                        input_values=form_values,
-                                        prediction=prediction,
-                                        top_crops=top_crops,
-                                        timestamp=timestamp)
+        options = {'enable-local-file-access': ''}
+        pdf = pdfkit.from_string(rendered_html, False, configuration=config, options=options)
 
-        pdf = pdfkit.from_string(rendered_html, False, configuration=config)
-
-        return send_file(BytesIO(pdf),
-                         as_attachment=True,
-                         download_name="crop_recommendation_report.pdf",
-                         mimetype='application/pdf')
+        return send_file(BytesIO(pdf), as_attachment=True, download_name="Crop_Recommendation_Report.pdf", mimetype='application/pdf')
 
     except Exception as e:
         return f"Error in generating PDF report: {str(e)}"
