@@ -1,78 +1,93 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <title>Crop Recommendation Report</title>
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script> <!-- Chart.js CDN -->
     <style>
-        * { box-sizing: border-box; }
-
         body {
             font-family: 'Poppins', sans-serif;
-            padding: 30px;
-            background: linear-gradient(to right, #d9f99d, #a7f3d0);
+            padding: 40px;
+            background-color: #f5f7fa;
             color: #333;
         }
 
         .report-container {
-            background-color: #ffffff;
             max-width: 900px;
             margin: 0 auto;
+            background: #ffffff;
             padding: 40px;
-            border-radius: 20px;
-            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.1);
+            border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.1);
         }
 
-        h1 {
+        .title {
             text-align: center;
-            color: #2e7d32;
-            margin-bottom: 40px;
-            font-size: 32px;
-        }
-
-        .section {
-            padding: 25px;
-            border-left: 6px solid #34d399;
-            border-radius: 12px;
-            background: #f0fdf4;
             margin-bottom: 30px;
         }
 
-        .section h2 {
-            color: #047857;
-            font-size: 20px;
-            margin-bottom: 15px;
-            border-bottom: 1px solid #d1fae5;
+        .title h1 {
+            font-size: 32px;
+            color: #2e7d32;
+            margin-bottom: 10px;
+        }
+
+        .title p {
+            font-size: 16px;
+            color: #777;
+        }
+
+        h2 {
+            font-size: 22px;
+            border-bottom: 2px solid #2e7d32;
             padding-bottom: 5px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #2e7d32;
         }
 
-        ul { list-style: none; padding: 0; margin: 0; }
-
-        li { margin-bottom: 10px; font-size: 15px; }
-
-        p { font-size: 15px; margin: 8px 0; }
-
-        strong { color: #065f46; }
-
-        .btn {
-            display: inline-block;
-            padding: 12px 25px;
-            background-color: #10b981;
-            color: white;
-            text-decoration: none;
-            border-radius: 8px;
-            text-align: center;
-            font-weight: 600;
-            transition: all 0.3s ease;
-            margin: 15px 8px 0;
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-bottom: 25px;
         }
 
-        .btn:hover { background-color: #059669; }
+        table, th, td {
+            border: 1px solid #ddd;
+        }
 
-        .note {
-            font-size: 13px;
-            color: #666;
-            margin-top: 10px;
+        th, td {
+            padding: 12px 15px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #e8f5e9;
+            font-size: 16px;
+        }
+
+        td {
+            font-size: 14px;
+        }
+
+        ul {
+            list-style: disc;
+            padding-left: 20px;
+            margin-bottom: 25px;
+        }
+
+        li {
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .highlight {
+            font-weight: bold;
+            font-size: 20px;
+            color: #1b5e20;
+            margin-bottom: 10px;
         }
 
         .btn-container {
@@ -80,63 +95,195 @@
             margin-top: 30px;
         }
 
-        @media (max-width: 600px) {
-            body { padding: 15px; }
-            .report-container { padding: 20px; }
-            h1 { font-size: 24px; }
+        .btn {
+            display: inline-block;
+            padding: 12px 25px;
+            background-color: #2e7d32;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            margin: 10px;
+            border: none;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+        }
+
+        .btn:hover {
+            background-color: #1b5e20;
+            transform: scale(1.05);
+        }
+
+        .footer {
+            border-top: 1px solid #ccc;
+            padding-top: 15px;
+            font-size: 12px;
+            text-align: center;
+            color: #777;
+            margin-top: 40px;
         }
     </style>
 </head>
+
 <body>
-    <div class="report-container">
-        <h1>🌾 Crop Recommendation Report</h1>
-
-        <div class="section">
-            <h2>👤 User & Report Info</h2>
-            <p><strong>User:</strong> {{ user }}</p>
-            <p><strong>Generated On:</strong> {{ timestamp }}</p>
+    <div class="report-container" id="report">
+        <div class="title">
+            <h1>Crop Recommendation Report</h1>
+            <p>Generated using AI-based soil & weather analysis</p>
         </div>
 
-        <div class="section">
-            <h2>🧪 Input Values</h2>
-            <ul>
-                {% for key, value in input_values.items() %}
-                    <li><strong>{{ key | capitalize }}:</strong> {{ value }}</li>
-                {% endfor %}
-            </ul>
+        <h2>User & Report Info</h2>
+        <table>
+            <tr><th>User ID</th><td>{{ user }}</td></tr>
+            <tr><th>Report Generated On</th><td>{{ timestamp }}</td></tr>
+        </table>
+
+        <h2>Location & Weather</h2>
+        <table>
+            <tr><th>Location</th><td>{{ location }}</td></tr>
+            <tr><th>Temperature</th><td>{{ input_values.temperature }} °C</td></tr>
+            <tr><th>Humidity</th><td>{{ input_values.humidity }}%</td></tr>
+        </table>
+
+        <h2>Soil Parameters</h2>
+        <table>
+            <tr><th>Parameter</th><th>Value</th></tr>
+            <tr><td>Nitrogen (N)</td><td>{{ input_values.N }}</td></tr>
+            <tr><td>Phosphorus (P)</td><td>{{ input_values.P }}</td></tr>
+            <tr><td>Potassium (K)</td><td>{{ input_values.K }}</td></tr>
+            <tr><td>pH</td><td>{{ input_values.ph }}</td></tr>
+            <tr><td>Rainfall</td><td>{{ input_values.rainfall }} mm</td></tr>
+        </table>
+
+        <!-- Soil Chart -->
+        <h2>Soil Nutrient Levels</h2>
+        <canvas id="soilChart" width="300" height="150" style="margin-bottom: 40px;"></canvas>
+
+        <h2>Recommended Crop</h2>
+        <p class="highlight">{{ prediction }}</p>
+        <p><em>Based on current soil and weather conditions.</em></p>
+
+        <h2>Top 3 Alternative Crops</h2>
+        <table>
+            <tr><th>Crop</th><th>Probability (%)</th></tr>
+            {% for crop in top_crops %}
+            <tr><td>{{ crop.crop }}</td><td>{{ crop.prob }}</td></tr>
+            {% endfor %}
+        </table>
+
+        <!-- Crop Probability Chart -->
+        <h2>Crop Recommendation Probability</h2>
+        <canvas id="cropChart" width="300" height="150" style="margin-bottom: 40px;"></canvas>
+
+        <h2>Additional Agronomic Insights</h2>
+        <ul>
+            <li>Ideal Temperature Range: 20°C - 35°C</li>
+            <li>Maintain a balanced pH and monitor nutrient levels regularly.</li>
+            <li>Use weather forecasts to determine optimal sowing periods.</li>
+        </ul>
+
+        <div class="btn-container no-print" id="button-section">
+            <button type="button" class="btn" onclick="downloadPDF()">Download PDF</button>
+            <a href="/" class="btn">Go to Home</a>
         </div>
 
-        <div class="section">
-            <h2>🌱 Recommended Crop</h2>
-            <p><strong>{{ prediction }}</strong></p>
-            <p class="note">This crop is best suited based on the current soil and climate conditions.</p>
-        </div>
-
-        <div class="section">
-            <h2>🌿 Top 3 Alternate Crops</h2>
-            <ul>
-                {% for crop, prob in top_crops %}
-                    <li>{{ crop }} - <strong>{{ prob }}%</strong></li>
-                {% endfor %}
-            </ul>
-        </div>
-
-        <div class="section">
-            <h2>📈 Additional Insights</h2>
-            <p><strong>Ideal Temperature Range:</strong> 20°C - 35°C (based on recommended crops)</p>
-            <p><strong>Soil Condition Tip:</strong> Maintain balanced pH and monitor moisture regularly.</p>
-            <p><strong>Weather Advisory:</strong> Refer to local forecasts to optimize planting schedules.</p>
-        </div>
-
-        <div class="btn-container">
-            <form action="{{ url_for('download_report') }}" method="POST" style="display: inline;">
-                {% for key, value in input_values.items() %}
-                    <input type="hidden" name="{{ key }}" value="{{ value }}">
-                {% endfor %}
-                <button type="submit" class="btn">📄 Download PDF</button>
-            </form>
-            <a class="btn" href="/">🏠 Go to Home</a>
+        <div class="footer">
+            <p>This report is system-generated and intended for informational purposes only.</p>
+            <p>&copy; 2025 AgriTech Solutions. All rights reserved.</p>
         </div>
     </div>
+
+    <!-- Add html2pdf library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.9.2/html2pdf.bundle.min.js"></script>
+
+    <!-- Chart.js Data Preparation -->
+    <script>
+        // Pass soil data and crop data safely from Flask
+        const soilData = {{ [input_values.N, input_values.P, input_values.K, input_values.ph, input_values.rainfall] | tojson }};
+        const cropLabels = {{ top_crops | map(attribute='crop') | list | tojson }};
+        const cropData = {{ top_crops | map(attribute='prob') | list | tojson }};
+    </script>
+
+    <!-- Chart.js Script -->
+    <script>
+        // Soil Nutrient Levels Bar Chart
+        const soilCtx = document.getElementById('soilChart').getContext('2d');
+        const soilChart = new Chart(soilCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Nitrogen (N)', 'Phosphorus (P)', 'Potassium (K)', 'pH', 'Rainfall (mm)'],
+                datasets: [{
+                    label: 'Soil Parameters',
+                    data: soilData,
+                    backgroundColor: [
+                        '#66bb6a',
+                        '#42a5f5',
+                        '#ffa726',
+                        '#ab47bc',
+                        '#ef5350'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: false,
+                maintainAspectRatio: false,
+                scales: {
+                    y: {
+                        beginAtZero: true
+                    }
+                }
+            }
+        });
+
+        // Crop Recommendation Pie Chart
+        const cropCtx = document.getElementById('cropChart').getContext('2d');
+        const cropChart = new Chart(cropCtx, {
+            type: 'pie',
+            data: {
+                labels: cropLabels,
+                datasets: [{
+                    label: 'Crop Probability',
+                    data: cropData,
+                    backgroundColor: [
+                        '#66bb6a',
+                        '#42a5f5',
+                        '#ffa726',
+                        '#ab47bc',
+                        '#ef5350'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: false,
+                maintainAspectRatio: false
+            }
+        });
+    </script>
+
+    <!-- PDF Download Script -->
+    <script>
+        function downloadPDF() {
+            // Hide buttons before generating PDF
+            document.getElementById('button-section').style.display = 'none';
+
+            const element = document.getElementById('report');
+            var opt = {
+                margin: 0.5,
+                filename: 'crop_recommendation_report.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2 },
+                jsPDF: { unit: 'in', format: 'letter', orientation: 'portrait' }
+            };
+
+            // Generate PDF
+            html2pdf().from(element).set(opt).save().then(() => {
+                // Show buttons again after generating PDF
+                document.getElementById('button-section').style.display = 'block';
+            });
+        }
+    </script>
 </body>
+
 </html>
