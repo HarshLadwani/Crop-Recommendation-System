@@ -1,8 +1,8 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Crop Recommendation System</title>
   <style>
     :root {
@@ -35,7 +35,6 @@
       justify-content: space-between;
       align-items: center;
       box-shadow: 0 4px 10px var(--shadow);
-      position: relative;
     }
 
     nav .brand {
@@ -43,20 +42,6 @@
       color: var(--text-light);
       font-weight: 600;
       letter-spacing: 1px;
-    }
-
-    .hamburger {
-      display: none;
-      flex-direction: column;
-      cursor: pointer;
-      gap: 5px;
-    }
-
-    .hamburger .bar {
-      width: 25px;
-      height: 3px;
-      background-color: var(--text-light);
-      transition: all 0.3s ease;
     }
 
     nav .nav-links {
@@ -211,31 +196,15 @@
     }
 
     @media (max-width: 768px) {
-      .hamburger {
-        display: flex;
-      }
-
-      .nav-links {
-        position: absolute;
-        top: 70px;
-        right: 40px;
-        background-color: var(--primary-green);
+      header {
         flex-direction: column;
-        align-items: flex-start;
-        width: 200px;
-        padding: 15px;
-        box-shadow: 0 4px 10px var(--shadow);
-        display: none;
-        z-index: 999;
+        text-align: center;
       }
-
-      .nav-links a {
-        margin: 10px 0;
-        width: 100%;
+      header .content, header img {
+        max-width: 90%;
       }
-
-      .nav-links.active {
-        display: flex;
+      nav .nav-links {
+        flex-direction: column;
       }
     }
   </style>
@@ -244,22 +213,18 @@
 
   <nav>
     <div class="brand">AgroGuide: AI Meets Agriculture</div>
-    <div class="hamburger" onclick="toggleMenu()">
-      <div class="bar"></div>
-      <div class="bar"></div>
-      <div class="bar"></div>
-    </div>
-    <div class="nav-links" id="navLinks">
-      {% if session.user %}
-        <a href="/recommend" onclick="toggleMenu()">Get Recommendations</a>
-        <a href="/logout" onclick="toggleMenu()">Logout</a>
+    <div class="nav-links">
+      {% if session['user'] %}
+        <a href="/recommend">Get Recommendations</a>
+        <a href="/history">View History</a>
+        <a href="/logout">Logout</a>
       {% else %}
-        <a href="/login" onclick="toggleMenu()">Login</a>
-        <a href="/register" onclick="toggleMenu()">Signup</a>
+        <a href="/login">Login</a>
+        <a href="/register">Signup</a>
       {% endif %}
-      <a href="#about" onclick="toggleMenu()">About</a>
-      <a href="#services" onclick="toggleMenu()">Services</a>
-      <a href="#contact" onclick="toggleMenu()">Contact</a>
+      <a href="#about">About</a>
+      <a href="#services">Services</a>
+      <a href="#contact">Contact</a>
     </div>
   </nav>
 
@@ -267,13 +232,14 @@
     <div class="content">
       <h1>Empowering Farmers with Smart Decisions</h1>
       <p>Our system helps farmers choose the most suitable crops based on real-time soil data, weather patterns, and market demand. Cultivate smarter, grow better, and thrive sustainably.</p>
-      {% if session.user %}
+      {% if session['user'] %}
         <button class="button" onclick="window.location.href='/recommend'">Get Recommendations</button>
+        <button class="button" onclick="window.location.href='/history'">View History</button>
       {% else %}
         <button class="button" onclick="window.location.href='/login'">Login to Start</button>
       {% endif %}
     </div>
-    <img src="/static/img.jpg" alt="Farmer Image" />
+    <img src="/static/img.jpg" alt="Farmer Image">
   </header>
 
   <section id="problems">
@@ -331,11 +297,5 @@
     <p>&copy; 2025 Crop Recommendation System. All rights reserved.</p>
   </footer>
 
-  <script>
-    function toggleMenu() {
-      const nav = document.getElementById("navLinks");
-      nav.classList.toggle("active");
-    }
-  </script>
 </body>
 </html>
